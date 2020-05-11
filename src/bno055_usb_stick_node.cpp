@@ -18,6 +18,11 @@
 
 namespace bus = bno055_usb_stick;
 
+int trig_seq = 0;
+int trigger_counter = 0;
+std::string trig_frame_id = "external_cam_trigger";
+ros::Publisher trigger_pub;
+
 ros::Publisher out_pub;
 ros::Publisher imu_pub;
 ros::Publisher pose_pub;
@@ -29,10 +34,20 @@ std::string tf_frame_id, tf_child_frame_id;
 bool invert_tf;
 
 void publish(const bno055_usb_stick_msgs::Output &output) {
+  const ros::Time cbk_time = ros::Time::now();
   if (out_pub.getNumSubscribers() > 0) {
     out_pub.publish(output);
   }
   if (imu_pub.getNumSubscribers() > 0) {
+    trigger_counter++;
+    trigger_counter = trigger_counter % 5;
+    if (trigger_counter == 0) {
+      std_msgs::Header trig;
+      trig.stamp = cbk_time;
+      trig.seq = trig_seq++;
+      trig.frame_id = trig_frame_id;
+      trigger_pub.publish(trig);
+    }
     imu_pub.publish(bus::Decoder::toImuMsg(output));
   }
   if (pose_pub.getNumSubscribers() > 0) {
@@ -63,6 +78,7 @@ int main(int argc, char *argv[]) {
   invert_tf = ros::param::param("~invert_tf", false);
 
   // setup publishers
+  trigger_pub = nh.advertise< std_msgs::Header >("trigger", 1);
   out_pub = nh.advertise< bno055_usb_stick_msgs::Output >("output", 1);
   imu_pub = nh.advertise< sensor_msgs::Imu >("imu", 1);
   pose_pub = nh.advertise< geometry_msgs::PoseStamped >("pose", 1);

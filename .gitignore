@@ -28,5 +28,6 @@
 *.out
 *.app
 
-# VS code settings
+# VS & IntelliJ code settings
 .vscode/
+.idea/

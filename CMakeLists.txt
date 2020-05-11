@@ -10,6 +10,7 @@ find_package(
   geometry_msgs
   roscpp
   sensor_msgs
+  std_msgs
   tf
   )
 
