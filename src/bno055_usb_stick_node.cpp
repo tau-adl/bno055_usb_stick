@@ -16,8 +16,11 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <pigpiod_if2.h>
+
 namespace bus = bno055_usb_stick;
 
+int pigpio_ptr = 0;
 int trig_seq = 0;
 int trigger_counter = 0;
 std::string trig_frame_id = "external_cam_trigger";
@@ -42,6 +45,9 @@ void publish(const bno055_usb_stick_msgs::Output &output) {
     trigger_counter++;
     trigger_counter = trigger_counter % 5;
     if (trigger_counter == 0) {
+      if (0 != gpio_trigger(pigpio_ptr, 23, 100, 1)) {
+	ROS_INFO("Trigger Error");
+	}
       std_msgs::Header trig;
       trig.stamp = cbk_time;
       trig.seq = trig_seq++;
@@ -70,6 +76,14 @@ int main(int argc, char *argv[]) {
   ros::init(argc, argv, "bno055_usb_stick_node");
   ros::NodeHandle nh;
 
+  pigpio_ptr = pigpio_start(NULL, NULL);
+  if (pigpio_ptr < 0) return 1;
+
+  if (0 != set_mode(pigpio_ptr, 23, PI_OUTPUT)) return 1;
+  if (0 != set_pull_up_down(pigpio_ptr, 23, PI_PUD_DOWN)) return 1;
+  if (0 != gpio_write(pigpio_ptr, 23, 0)) return 1;
+  
+
   // load parameters
   pose_frame_id = ros::param::param< std::string >("~pose_frame_id", "fixed");
   const bool publish_tf(ros::param::param("~publish_tf", false));
@@ -96,6 +110,8 @@ int main(int argc, char *argv[]) {
   while (nh.ok()) {
     asio_service.run_one();
   }
+
+  pigpio_stop(pigpio_ptr);
 
   return 0;
 }

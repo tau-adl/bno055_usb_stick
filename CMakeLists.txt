@@ -20,6 +20,9 @@ find_package(
   system
   )
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR} )
+find_package(pigpio MODULE REQUIRED)
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -123,6 +126,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${pigpio_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -146,6 +150,7 @@ add_executable(
 add_dependencies(
   bno055_usb_stick_node
   bno055_usb_stick_msgs_generate_messages_cpp
+  pigpiod_if2
   )
 
 ## Specify libraries to link a library or executable target against
@@ -153,6 +158,7 @@ target_link_libraries(
   bno055_usb_stick_node
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
+  pigpiod_if2
   )
 
 #############
