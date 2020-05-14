@@ -35,6 +35,9 @@ ros::Publisher temp_pub;
 boost::shared_ptr< tf::TransformBroadcaster > tf_pub;
 std::string tf_frame_id, tf_child_frame_id;
 bool invert_tf;
+bool trigger_enable;
+int trigger_divider;
+int gpio_num;
 
 void publish(const bno055_usb_stick_msgs::Output &output) {
   const ros::Time cbk_time = ros::Time::now();
@@ -43,11 +46,13 @@ void publish(const bno055_usb_stick_msgs::Output &output) {
   }
   if (imu_pub.getNumSubscribers() > 0) {
     trigger_counter++;
-    trigger_counter = trigger_counter % 5;
+    trigger_counter = trigger_counter % trigger_divider;
     if (trigger_counter == 0) {
-      if (0 != gpio_trigger(pigpio_ptr, 23, 100, 1)) {
+      if (trigger_enable) {
+      if (0 != gpio_trigger(pigpio_ptr, gpio_num, 100, 1)) {
 	ROS_INFO("Trigger Error");
 	}
+      }
       std_msgs::Header trig;
       trig.stamp = cbk_time;
       trig.seq = trig_seq++;
@@ -75,21 +80,26 @@ int main(int argc, char *argv[]) {
   // init ROS
   ros::init(argc, argv, "bno055_usb_stick_node");
   ros::NodeHandle nh;
-
-  pigpio_ptr = pigpio_start(NULL, NULL);
-  if (pigpio_ptr < 0) return 1;
-
-  if (0 != set_mode(pigpio_ptr, 23, PI_OUTPUT)) return 1;
-  if (0 != set_pull_up_down(pigpio_ptr, 23, PI_PUD_DOWN)) return 1;
-  if (0 != gpio_write(pigpio_ptr, 23, 0)) return 1;
   
-
   // load parameters
   pose_frame_id = ros::param::param< std::string >("~pose_frame_id", "fixed");
   const bool publish_tf(ros::param::param("~publish_tf", false));
   tf_frame_id = ros::param::param< std::string >("~tf_frame_id", "fixed");
   tf_child_frame_id = ros::param::param< std::string >("~tf_child_frame_id", "bno055");
   invert_tf = ros::param::param("~invert_tf", false);
+  trigger_divider = ros::param::param("~trigger_divider", 5);
+  gpio_num = ros::param::param("~gpio_num", 23);
+  trigger_enable = ros::param::param("~trigger_enable", true);
+
+  // init pigpio
+  if (trigger_enable) {
+	  pigpio_ptr = pigpio_start(NULL, NULL);
+	  if (pigpio_ptr < 0) return 1;
+
+	  if (0 != set_mode(pigpio_ptr, gpio_num, PI_OUTPUT)) return 1;
+	  if (0 != set_pull_up_down(pigpio_ptr, gpio_num, PI_PUD_DOWN)) return 1;
+	  if (0 != gpio_write(pigpio_ptr, gpio_num, 0)) return 1;
+  }
 
   // setup publishers
   trigger_pub = nh.advertise< std_msgs::Header >("trigger", 1);

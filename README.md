@@ -54,6 +54,19 @@ bno055_usb_stick_msgs https://github.com/yoshito-n-students/bno055_usb_stick_msg
 * invert transfom in tf message or not
 * frame ids in tf message will NOT be swapped
 
+**Triggering Parameters. To work with triggering, first make sure pigpiod is running (sudo pigpiod).**
+
+**~trigger_enable** (bool, default: true)
+* enable gpio pulse triggering functionality.
+
+**~trigger_divider** (int, default: 5)
+* triggering will occur every 100/trigger_divider imu data reads.
+* 1-100
+
+**~gpio_num** (int, default: 23)
+* triggering will occur every 100/trigger_divider imu data reads.
+* valid values according to rpi version.
+
 ## Troubleshooting
 `[ERROR] []: start: open: Permission denied`
 * give permission to the current user by `sudo usermod -aG dialout $USER`. This command is for ubuntu 16.04 and may vary for other environments.
