@@ -64,8 +64,9 @@ bno055_usb_stick_msgs https://github.com/yoshito-n-students/bno055_usb_stick_msg
 * 1-100
 
 **~gpio_num** (int, default: 23)
-* triggering will occur every 100/trigger_divider imu data reads.
-* valid values according to rpi version.
+* gpio trigger out pin.
+* possible values depend on rpi model.
+
 
 ## Troubleshooting
 `[ERROR] []: start: open: Permission denied`
